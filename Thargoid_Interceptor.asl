@@ -15,12 +15,18 @@
 state("EliteDangerous64") {}
 
 startup {
-	// Set up regular expressions for start, split, and reset
-	vars.startMusicRegex = new System.Text.RegularExpressions.Regex(".*MusicTrack.*Combat_Unknown.*");
-	vars.splitHeartRegex = new System.Text.RegularExpressions.Regex(".*HeartManager.*SetExertedHeartSlotIndex.*4294967295.*");
-	vars.splitBondRegex = new System.Text.RegularExpressions.Regex(".*FactionKillBond.*faction_Thargoid.*");
-	vars.resetSupercruiseRegex = new System.Text.RegularExpressions.Regex(".*SupercruiseEntry.*");
-	vars.resetHyperspaceRegex = new System.Text.RegularExpressions.Regex(".*StartJump.*JumpType.*Hyperspace.*");
+	// Relevant journal entries
+	vars.journalEntries = new Dictionary<string, System.Text.RegularExpressions.Regex>();
+	vars.journalEntries["start"] =
+		new System.Text.RegularExpressions.Regex(@"\{ ""timestamp"":""(?<timestamp>.*)"", ""event"":""Music"", ""MusicTrack"":""Combat_Unknown"" \}");
+	vars.journalEntries["end"] =
+		new System.Text.RegularExpressions.Regex(@"\{ ""timestamp"":""(?<timestamp>.*)"", ""event"":""FactionKillBond"", ""Reward"":(?<reward>\d{7}\d?), ""AwardingFaction"":""\$faction_PilotsFederation;"", ""AwardingFaction_Localised"":"".*"", ""VictimFaction"":""\$faction_Thargoid;"", ""VictimFaction_Localised"":"".*"" \}");
+	vars.journalEntries["reset"] = new System.Text.RegularExpressions.Regex(@".*(SupercruiseEntry|StartJump.*JumpType.*Hyperspace).*");
+
+	// Relevant netlog entries
+	vars.netlogEntries = new Dictionary<string, System.Text.RegularExpressions.Regex>();
+	vars.netlogEntries["heart"]
+		= new System.Text.RegularExpressions.Regex(@"\{(?<timestamp>.*)\} HeartManager - Authority SetExertedHeartSlotIndex: (?<index>\d+) \(\d+\)");
 
 	// readers
 	vars.journalReader = null;
@@ -71,23 +77,31 @@ init {
 	string eliteClientPath = Process.GetProcessesByName("EliteDangerous64").First().MainModule.FileName;
 	vars.log("Found Elite Process: " + eliteClientPath);
 
+	string netlogPath = Path.Combine(
+			Path.GetDirectoryName(eliteClientPath),
+			"Logs"
+		);
 	string journalPath = Path.Combine(
 		Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
 		"Saved Games",
 		"Frontier Developments",
 		"Elite Dangerous"
 		);
+
+	// Quick & dirty race condition “fix”, see issue #4
+	int delay = 15;
+	vars.log("Waiting for log files, sleeping for " + delay + " s …");
+	Thread.Sleep(delay*1000);
+
+	// Grab latest journal file
 	FileInfo journalFile = new DirectoryInfo(journalPath).GetFiles("journal.*.log").OrderByDescending(file => file.Name).First();
 	vars.log("Found Journal: " + journalFile.FullName);
 	vars.journalReader = new StreamReader(new FileStream(journalFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
 	vars.journalReader.ReadToEnd();
 
-	string netlogPath = Path.Combine(
-			Path.GetDirectoryName(eliteClientPath),
-			"Logs"
-		);
+	// Grab latest netlog file
 	if (!Directory.Exists(netlogPath)) {
-		string message = "Netlog directory '" + netlogPath + "' not found. Please make sure to set your game installation folder and enable netlogs.";
+		string message = "Netlog directory '" + netlogPath + "' not found. Please make sure to enable netlogs.";
 		vars.log(message);
 		MessageBox.Show(message);
 	} else {
@@ -99,46 +113,68 @@ init {
 }
 
 update {
-	vars.journalString = vars.journalReader.ReadToEnd();
-	vars.netlogString = vars.netlogReader.ReadToEnd();
-	if (vars.journalString == null && vars.netlogString == null) return false; // Nothing new, don't run any other code blocks
+	current.journalString = vars.journalReader.ReadToEnd();
+	current.netlogString = vars.netlogReader.ReadToEnd();
+
+	if (String.IsNullOrEmpty(current.journalString) && String.IsNullOrEmpty(current.netlogString)) {
+		// Nothing new, don't run any other code blocks
+		return false; 
+	}
 }
 
 start {
-	if (vars.startMusicRegex.Match(vars.journalString).Success) {
-		vars.log("Start run: Combat music detected");
-		return true; // Combat started
-	} else {
-		return false;
+	bool start = false;
+
+	if (!String.IsNullOrEmpty(current.journalString)) {
+		System.Text.RegularExpressions.Match match = vars.journalEntries["start"].Match(current.journalString);
+		if (match.Success) {
+			vars.log(match.Groups["timestamp"].Value + " - Start run: Combat music detected");
+			start = true;
+		}
 	}
+
+	return start;
 }
 
 split {
-	if (vars.journalString == null && vars.netlogString == null) return false; // Nothing new, don't run this block
+	bool split = false;
 
-	if (vars.splitHeartRegex.Match(vars.netlogString).Success) {
-		vars.log("Split: Heart " + ++vars.heartCounter + " down");
-		return true;
+	if (!String.IsNullOrEmpty(current.netlogString)) {
+		System.Text.RegularExpressions.Match match = vars.netlogEntries["heart"].Match(current.netlogString);
+		if (match.Success && match.Groups["index"].Value == "4294967295") {
+			vars.log(match.Groups["timestamp"].Value + " - Split: Heart " + ++vars.heartCounter + " down");
+			split = true;
+		}
 	}
-	if (vars.splitBondRegex.Match(vars.journalString).Success) {
-		vars.log("Finish run: Bond received");
-		return true;
+	
+	if (!String.IsNullOrEmpty(current.journalString)) {
+		System.Text.RegularExpressions.Match match = vars.journalEntries["end"].Match(current.journalString);
+		if (match.Success) {
+			vars.log(match.Groups["timestamp"].Value + " - Finish run: Bond received");
+			split = true;
+		}
 	}
+
+	return split;
 }
 
 reset {
-	if (vars.resetSupercruiseRegex.Match(vars.journalString).Success) {
-		vars.log("Reset: Jumped to Supercruise");
-		return true;
+	bool reset = false;
+
+	if (!String.IsNullOrEmpty(current.journalString)) {
+		System.Text.RegularExpressions.Match match = vars.journalEntries["reset"].Match(current.journalString);
+		if (match.Success) {
+			vars.log(match.Groups["timestamp"].Value + " - Reset: Jumped out");
+			reset = true;
+		}
 	}
 
-	if (vars.resetHyperspaceRegex.Match(vars.journalString).Success) {
-		vars.log("Reset: Jumped to Hyperspace");
-		return true;
+	// Reset heart counter for next fight
+	if (reset) {
+		vars.heartCounter = 0;
 	}
 
-	// NOTE: As alterNERDtive suggested, need to add more reset conditions such as rebuy here ... TBD --CMDR Mechan
-
+	return reset;
 }
 
 exit {

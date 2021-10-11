@@ -29,20 +29,42 @@ startup {
 	// Initialize settings
 	settings.Add("odyssey", false, "Odyssey client");
 	settings.SetToolTip("odyssey", "Enable this if you are loaded into Odyssey, keep this disabled if you are loaded into Horizons");
-	
-	// Initializize LiveSplit's own log file
-	vars.logFilePath = "C:\\Users\\FScog\\Saved Games\\autosplitter_elite.log";
+	settings.Add("logging", false, "Log to file");
+	settings.SetToolTip("logging", "Write the auto splitter log to a file for debugging purposes");
+
+	// Initialize log file
+	string logDirectoyPath = Path.Combine(
+		Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+		"LiveSplit",
+		"Thargoid_Interceptors"
+		);
+	vars.logFile = new FileInfo(Path.Combine(logDirectoyPath, "autosplitter.log"));
+	try {
+		if (!Directory.Exists(logDirectoyPath)) {
+			Directory.CreateDirectory(logDirectoyPath);
+		}
+		if (!vars.logFile.Exists) {
+			vars.logFile.Create();
+		}
+	}
+	catch (Exception e) {
+		MessageBox.Show("Could not create log file:\n" + vars.logFile.FullName);
+	}
+
 	vars.log = (Action<string>)((string logLine) => {
 		print(logLine);
-		string time = System.DateTime.Now.ToString("dd/MM/yy hh:mm:ss:fff");
-		System.IO.File.AppendAllText(vars.logFilePath, time + ": " + logLine + "\r\n");
+		// needs to check settings too, but those aren’t available in startup …
+		try {
+			using (StreamWriter writer = vars.logFile.AppendText()) {
+				writer.WriteLine(System.DateTime.Now.ToString("dd/MM/yy hh:mm:ss:fff") + ": " + logLine);
+			}
+		}
+		catch (Exception e) {
+			print(e.Message);
+		}
 	});
-	try {
-		vars.log("Autosplitter loaded");
-	} catch (System.IO.FileNotFoundException e) {
-		System.IO.File.Create(vars.logFilePath);
-		vars.log("Autosplitter loaded, log file created");
-	}
+
+	vars.log("Autosplitter loaded");
 }
 
 init {

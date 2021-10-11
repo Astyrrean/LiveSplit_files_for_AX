@@ -5,8 +5,7 @@
 *	### INSTALLATION ###
 *	-	If you haven't already, download LiveSplit from https://livesplit.org/downloads/
 *	-	Enable netLogs in-game in the main_menu/networking screen
-*	-	In this file, set journalPath in the "init" section to point to your journal*.log location.
-*	-	In this file, set netLogPath in the "init" section to point to your netLog*.log location [note this varies between Horizons and Odyssey!].
+*	-	In this file, set vars.installationFolder in the "startup" section to point to your Launcher installation folder.
 *	-	In LiveSplit do the following:
 *	-		Right click, Open Splits, select the appropriate *.lss file (Cyclops/Basilisk/Medusa/Hydra)
 *	-		Right click, Open Layout, select the appropriate *.lsl file (Cyclops/Basilisk/Medusa/Hydra)
@@ -17,6 +16,8 @@
 state("EliteDangerous64") {}
 
 startup {
+	vars.installationFolder = @"x:\path\to\edlaunch";
+
 	// Set up regular expressions for start, split, and reset
 	vars.startMusicRegex = new System.Text.RegularExpressions.Regex(".*MusicTrack.*Combat_Unknown.*");
 	vars.splitHeartRegex = new System.Text.RegularExpressions.Regex(".*HeartManager.*SetExertedHeartSlotIndex.*4294967295.*");
@@ -47,22 +48,34 @@ startup {
 
 init {
 	// Open Journal - Edit journalPath to match where your journal file is
-	string journalPath = "C:\\Users\\FScog\\Saved Games\\Frontier Developments\\Elite Dangerous";
-	string[] journalFiles = Directory.GetFiles(journalPath, "journal.*.log");
-	Array.Sort(journalFiles, StringComparer.OrdinalIgnoreCase);
-	journalFiles = journalFiles.Reverse().ToArray();
-	vars.log("Found Journal: " + journalFiles[0]);
-	vars.journalReader = new StreamReader(new FileStream(journalFiles[0], FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+	string journalPath = Path.Combine(
+		Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+		"Saved Games",
+		"Frontier Developments",
+		"Elite Dangerous"
+		);
+	FileInfo journalFile = new DirectoryInfo(journalPath).GetFiles("journal.*.log").OrderByDescending(file => file.Name).First();
+	vars.log("Found Journal: " + journalFile.FullName);
+	vars.journalReader = new StreamReader(new FileStream(journalFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
 	vars.journalReader.ReadToEnd();
 
 	// Open netLog - Edit netLogPath to match where your netLog file is, and note it varies between Horizons and Odyssey!
-	string netLogPath = "C:\\Users\\FScog\\AppData\\Local\\Frontier_Developments\\Products\\elite-dangerous-64\\Logs";
-	string[] netLogFiles = Directory.GetFiles(netLogPath, "netLog.*.log");
-	Array.Sort(netLogFiles, StringComparer.OrdinalIgnoreCase);
-	netLogFiles = netLogFiles.Reverse().ToArray();
-	vars.log("Found NetLog: " + netLogFiles[0]);
-	vars.netlogReader = new StreamReader(new FileStream(netLogFiles[0], FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
-	vars.netlogReader.ReadToEnd();
+	string netlogPath = Path.Combine(
+			vars.installationFolder,
+			"Products",
+			(settings["odyssey"] ? "elite-dangerous-64-odyssey" : "elite-dangerous-64"), // FIXXME: check that
+			"Logs"
+		);
+	if (!Directory.Exists(netlogPath)) {
+		string message = "Netlog directory '" + netlogPath + "' not found. Please make sure to set your game installation folder and enable netlogs.";
+		vars.log(message);
+		MessageBox.Show(message);
+	} else {
+		FileInfo netLogFile = new DirectoryInfo(netlogPath).GetFiles("netLog.*.log").OrderByDescending(file => file.Name).First();
+		vars.log("Found NetLog: " + netLogFile.FullName);
+		vars.netlogReader = new StreamReader(new FileStream(netLogFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+		vars.netlogReader.ReadToEnd();
+	}
 }
 
 update {
@@ -106,4 +119,10 @@ reset {
 
 	// NOTE: As alterNERDtive suggested, need to add more reset conditions such as rebuy here ... TBD --CMDR Mechan
 
+}
+
+exit {
+	// we opened these on game launch, so we better close them on game shutdown!
+	vars.journalReader.Close();
+	vars.netlogReader.Close();
 }

@@ -17,7 +17,6 @@
 state("EliteDangerous64") {}
 
 startup {
-
 	// Set up regular expressions for start, split, and reset
 	vars.startMusicRegex = new System.Text.RegularExpressions.Regex(".*MusicTrack.*Combat_Unknown.*");
 	vars.splitHeartRegex = new System.Text.RegularExpressions.Regex(".*HeartManager.*SetExertedHeartSlotIndex.*4294967295.*");
@@ -27,6 +26,9 @@ startup {
 
 	// Initialize heart counter
 	vars.heartCounter = 0;
+	// Initialize settings
+	settings.Add("odyssey", false, "Odyssey client")
+	settings.SetToolTip("odyssey", "Enable this if you are loaded into Odyssey, keep this disabled if you are loaded into Horizons")
 	
 	// Initializize LiveSplit's own log file
 	vars.logFilePath = "C:\\Users\\FScog\\Saved Games\\autosplitter_elite.log";

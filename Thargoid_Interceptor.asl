@@ -61,7 +61,7 @@ init {
 	string netlogPath = Path.Combine(
 			vars.installationFolder,
 			"Products",
-			(settings["odyssey"] ? "elite-dangerous-64-odyssey" : "elite-dangerous-64"), // FIXXME: check that
+			(settings["odyssey"] ? "elite-dangerous-odyssey-64" : "elite-dangerous-64"),
 			"Logs"
 		);
 	if (!Directory.Exists(netlogPath)) {

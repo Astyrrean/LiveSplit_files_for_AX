@@ -27,8 +27,8 @@ startup {
 	// Initialize heart counter
 	vars.heartCounter = 0;
 	// Initialize settings
-	settings.Add("odyssey", false, "Odyssey client")
-	settings.SetToolTip("odyssey", "Enable this if you are loaded into Odyssey, keep this disabled if you are loaded into Horizons")
+	settings.Add("odyssey", false, "Odyssey client");
+	settings.SetToolTip("odyssey", "Enable this if you are loaded into Odyssey, keep this disabled if you are loaded into Horizons");
 	
 	// Initializize LiveSplit's own log file
 	vars.logFilePath = "C:\\Users\\FScog\\Saved Games\\autosplitter_elite.log";

@@ -5,7 +5,6 @@
 *	### INSTALLATION ###
 *	-	If you haven't already, download LiveSplit from https://livesplit.org/downloads/
 *	-	Enable netLogs in-game in the main_menu/networking screen
-*	-	In this file, set vars.installationFolder in the "startup" section to point to your Launcher installation folder.
 *	-	In LiveSplit do the following:
 *	-		Right click, Open Splits, select the appropriate *.lss file (Cyclops/Basilisk/Medusa/Hydra)
 *	-		Right click, Open Layout, select the appropriate *.lsl file (Cyclops/Basilisk/Medusa/Hydra)
@@ -16,8 +15,6 @@
 state("EliteDangerous64") {}
 
 startup {
-	vars.installationFolder = @"x:\path\to\edlaunch";
-
 	// Set up regular expressions for start, split, and reset
 	vars.startMusicRegex = new System.Text.RegularExpressions.Regex(".*MusicTrack.*Combat_Unknown.*");
 	vars.splitHeartRegex = new System.Text.RegularExpressions.Regex(".*HeartManager.*SetExertedHeartSlotIndex.*4294967295.*");
@@ -25,11 +22,12 @@ startup {
 	vars.resetSupercruiseRegex = new System.Text.RegularExpressions.Regex(".*SupercruiseEntry.*");
 	vars.resetHyperspaceRegex = new System.Text.RegularExpressions.Regex(".*StartJump.*JumpType.*Hyperspace.*");
 
+	// readers
+	vars.journalReader = null;
+	vars.netlogReader = null;
 	// Initialize heart counter
 	vars.heartCounter = 0;
 	// Initialize settings
-	settings.Add("odyssey", false, "Odyssey client");
-	settings.SetToolTip("odyssey", "Enable this if you are loaded into Odyssey, keep this disabled if you are loaded into Horizons");
 	settings.Add("logging", false, "Log to file");
 	settings.SetToolTip("logging", "Write the auto splitter log to a file for debugging purposes");
 
@@ -69,6 +67,10 @@ startup {
 }
 
 init {
+	// There will be a process, otherwise this wouldn’t be called. There will only be one process of that file.
+	string eliteClientPath = Process.GetProcessesByName("EliteDangerous64").First().MainModule.FileName;
+	vars.log("Found Elite Process: " + eliteClientPath);
+
 	string journalPath = Path.Combine(
 		Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
 		"Saved Games",
@@ -81,9 +83,7 @@ init {
 	vars.journalReader.ReadToEnd();
 
 	string netlogPath = Path.Combine(
-			vars.installationFolder,
-			"Products",
-			(settings["odyssey"] ? "elite-dangerous-odyssey-64" : "elite-dangerous-64"),
+			Path.GetDirectoryName(eliteClientPath),
 			"Logs"
 		);
 	if (!Directory.Exists(netlogPath)) {

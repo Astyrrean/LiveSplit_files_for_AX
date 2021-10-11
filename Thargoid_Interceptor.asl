@@ -47,7 +47,6 @@ startup {
 }
 
 init {
-	// Open Journal - Edit journalPath to match where your journal file is
 	string journalPath = Path.Combine(
 		Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
 		"Saved Games",
@@ -59,7 +58,6 @@ init {
 	vars.journalReader = new StreamReader(new FileStream(journalFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
 	vars.journalReader.ReadToEnd();
 
-	// Open netLog - Edit netLogPath to match where your netLog file is, and note it varies between Horizons and Odyssey!
 	string netlogPath = Path.Combine(
 			vars.installationFolder,
 			"Products",

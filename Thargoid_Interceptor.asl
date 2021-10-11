@@ -25,9 +25,8 @@ startup {
 	vars.resetSupercruiseRegex = new System.Text.RegularExpressions.Regex(".*SupercruiseEntry.*");
 	vars.resetHyperspaceRegex = new System.Text.RegularExpressions.Regex(".*StartJump.*JumpType.*Hyperspace.*");
 
-	// Initialize heart counter and number of hearts
+	// Initialize heart counter
 	vars.heartCounter = 0;
-	vars.heartNumber = 6; // Cyclops is 4, Basilisk is 5, Medusa is 6, Hydra is 8
 	
 	// Initializize LiveSplit's own log file
 	vars.logFilePath = "C:\\Users\\FScog\\Saved Games\\autosplitter_elite.log";
@@ -82,9 +81,8 @@ start {
 split {
 	if (vars.journalString == null && vars.netlogString == null) return false; // Nothing new, don't run this block
 
-	if (vars.splitHeartRegex.Match(vars.netlogString).Success && vars.heartCounter < vars.heartNumber) {
-		vars.heartCounter++;
-		vars.log("Split: Heart " + vars.heartCounter + " down");
+	if (vars.splitHeartRegex.Match(vars.netlogString).Success) {
+		vars.log("Split: Heart " + ++vars.heartCounter + " down");
 		return true;
 	}
 	if (vars.splitBondRegex.Match(vars.journalString).Success) {

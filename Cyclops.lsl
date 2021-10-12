@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <Layout version="1.6.1">
   <Mode>Vertical</Mode>
-  <X>3135</X>
-  <Y>141</Y>
-  <VerticalWidth>252</VerticalWidth>
-  <VerticalHeight>225</VerticalHeight>
+  <X>2942</X>
+  <Y>96</Y>
+  <VerticalWidth>436</VerticalWidth>
+  <VerticalHeight>330</VerticalHeight>
   <HorizontalWidth>-1</HorizontalWidth>
   <HorizontalHeight>-1</HorizontalHeight>
   <Settings>
@@ -35,7 +35,7 @@
     <BackgroundImage />
     <ImageOpacity>1</ImageOpacity>
     <ImageBlur>0</ImageBlur>
-    <Opacity>1</Opacity>
+    <Opacity>0.65</Opacity>
     <MousePassThroughWhileRunning>True</MousePassThroughWhileRunning>
   </Settings>
   <Components>
@@ -81,8 +81,8 @@
         <Columns>
           <Settings>
             <Version>1.5</Version>
-            <Name>+/-</Name>
-            <Type>Delta</Type>
+            <Name>Segment</Name>
+            <Type>SegmentTime</Type>
             <Comparison>Current Comparison</Comparison>
             <TimingMethod>Current Timing Method</TimingMethod>
           </Settings>
@@ -90,8 +90,15 @@
             <Version>1.5</Version>
             <Name>Time</Name>
             <Type>SplitTime</Type>
-            <Comparison>Current Comparison</Comparison>
+            <Comparison>Average Segments</Comparison>
             <TimingMethod>Current Timing Method</TimingMethod>
+          </Settings>
+          <Settings>
+            <Version>1.5</Version>
+            <Name>+/-</Name>
+            <Type>DeltaorSplitTime</Type>
+            <Comparison>Average Segments</Comparison>
+            <TimingMethod>Real Time</TimingMethod>
           </Settings>
         </Columns>
       </Settings>
@@ -100,11 +107,14 @@
       <Path>LiveSplit.ScriptableAutoSplit.dll</Path>
       <Settings>
         <Version>1.5</Version>
-        <ScriptPath>C:\Users\FScog\Documents\GitHub\LiveSplit_files_for_AX\01. Cyclops\Cyclops_Autosplitter_v2.asl</ScriptPath>
+        <ScriptPath>C:\Users\FScog\Documents\GitHub\LiveSplit_files_for_AX\Thargoid_Interceptor.asl</ScriptPath>
         <Start>True</Start>
         <Reset>True</Reset>
         <Split>True</Split>
-        <CustomSettings />
+        <CustomSettings>
+          <Setting id="odyssey" type="bool">False</Setting>
+          <Setting id="logging" type="bool">False</Setting>
+        </CustomSettings>
       </Settings>
     </Component>
     <Component>

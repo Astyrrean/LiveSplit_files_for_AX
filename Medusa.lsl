@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <Layout version="1.6.1">
   <Mode>Vertical</Mode>
-  <X>3081</X>
-  <Y>66</Y>
-  <VerticalWidth>309</VerticalWidth>
-  <VerticalHeight>248</VerticalHeight>
+  <X>2953</X>
+  <Y>68</Y>
+  <VerticalWidth>437</VerticalWidth>
+  <VerticalHeight>330</VerticalHeight>
   <HorizontalWidth>-1</HorizontalWidth>
   <HorizontalHeight>-1</HorizontalHeight>
   <Settings>
@@ -107,11 +107,14 @@
       <Path>LiveSplit.ScriptableAutoSplit.dll</Path>
       <Settings>
         <Version>1.5</Version>
-        <ScriptPath>C:\Users\FScog\Documents\GitHub\LiveSplit_files_for_AX\Horizons\Medusa\Medusa_Autosplitter_v2.asl</ScriptPath>
+        <ScriptPath>C:\Users\FScog\Documents\GitHub\LiveSplit_files_for_AX\Thargoid_Interceptor.asl</ScriptPath>
         <Start>True</Start>
         <Reset>True</Reset>
         <Split>True</Split>
-        <CustomSettings />
+        <CustomSettings>
+          <Setting id="odyssey" type="bool">False</Setting>
+          <Setting id="logging" type="bool">False</Setting>
+        </CustomSettings>
       </Settings>
     </Component>
     <Component>

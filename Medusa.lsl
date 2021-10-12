@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <Layout version="1.6.1">
   <Mode>Vertical</Mode>
-  <X>2953</X>
-  <Y>68</Y>
-  <VerticalWidth>437</VerticalWidth>
+  <X>2810</X>
+  <Y>96</Y>
+  <VerticalWidth>454</VerticalWidth>
   <VerticalHeight>330</VerticalHeight>
   <HorizontalWidth>-1</HorizontalWidth>
   <HorizontalHeight>-1</HorizontalHeight>
@@ -104,20 +104,6 @@
       </Settings>
     </Component>
     <Component>
-      <Path>LiveSplit.ScriptableAutoSplit.dll</Path>
-      <Settings>
-        <Version>1.5</Version>
-        <ScriptPath>C:\Users\FScog\Documents\GitHub\LiveSplit_files_for_AX\Thargoid_Interceptor.asl</ScriptPath>
-        <Start>True</Start>
-        <Reset>True</Reset>
-        <Split>True</Split>
-        <CustomSettings>
-          <Setting id="odyssey" type="bool">False</Setting>
-          <Setting id="logging" type="bool">False</Setting>
-        </CustomSettings>
-      </Settings>
-    </Component>
-    <Component>
       <Path>LiveSplit.DetailedTimer.dll</Path>
       <Settings>
         <Version>1.5</Version>
@@ -150,6 +136,19 @@
         <TimingMethod>Current Timing Method</TimingMethod>
         <DecimalsSize>35</DecimalsSize>
         <SegmentTimerDecimalsSize>35</SegmentTimerDecimalsSize>
+      </Settings>
+    </Component>
+    <Component>
+      <Path>LiveSplit.ScriptableAutoSplit.dll</Path>
+      <Settings>
+        <Version>1.5</Version>
+        <ScriptPath>C:\Users\FScog\Documents\GitHub\LiveSplit_files_for_AX\Thargoid_Interceptor.asl</ScriptPath>
+        <Start>True</Start>
+        <Reset>True</Reset>
+        <Split>True</Split>
+        <CustomSettings>
+          <Setting id="logging" type="bool">False</Setting>
+        </CustomSettings>
       </Settings>
     </Component>
   </Components>

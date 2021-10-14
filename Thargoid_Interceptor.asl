@@ -37,35 +37,26 @@ startup {
 	settings.Add("logging", false, "Log to file");
 	settings.SetToolTip("logging", "Write the auto splitter log to a file for debugging purposes");
 
+	vars.logFile = null;
+	vars.logToFile = false;
 	// Initialize log file
-	string logDirectoyPath = Path.Combine(
-		Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-		"LiveSplit",
-		"Thargoid_Interceptors"
+	vars.logFile = new FileInfo(Path.Combine(
+			Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+			"LiveSplit",
+			"Thargoid_Interceptors",
+			"autosplitter.log")
 		);
-	vars.logFile = new FileInfo(Path.Combine(logDirectoyPath, "autosplitter.log"));
-	try {
-		if (!Directory.Exists(logDirectoyPath)) {
-			Directory.CreateDirectory(logDirectoyPath);
-		}
-		if (!vars.logFile.Exists) {
-			vars.logFile.Create();
-		}
-	}
-	catch (Exception e) {
-		MessageBox.Show("Could not create log file:\n" + vars.logFile.FullName);
-	}
-
 	vars.log = (Action<string>)((string logLine) => {
 		print(logLine);
-		// needs to check settings too, but those aren’t available in startup …
-		try {
-			using (StreamWriter writer = vars.logFile.AppendText()) {
-				writer.WriteLine(System.DateTime.Now.ToString("dd/MM/yy hh:mm:ss:fff") + ": " + logLine);
+		if (vars.logToFile) {
+			try {
+				using (StreamWriter writer = vars.logFile.AppendText()) {
+					writer.WriteLine(System.DateTime.Now.ToString("dd/MM/yy hh:mm:ss:fff") + ": " + logLine);
+				}
 			}
-		}
-		catch (Exception e) {
-			print(e.Message);
+			catch (Exception e) {
+				print(e.Message);
+			}
 		}
 	});
 
@@ -73,6 +64,32 @@ startup {
 }
 
 init {
+	// Doing this here, since the setting is not available during `startup`.
+	// There is no way to detect when the user changes the option in layout settings; so we’ll have to check in `start` again.
+	// If a user changes the setting mid run … not my department.
+	vars.setupLogging = (Action)delegate() {
+		// Only do anything if the setting hasn’t been applied yet.
+		// If we’re in sync, just return to minimise execution time.
+		if (settings["logging"] != vars.logToFile) {
+			vars.logToFile = settings["logging"];
+			if (vars.logToFile) {
+				try {
+					string logDir = Path.GetDirectoryName(vars.logFile.FullName);
+					if (!Directory.Exists(logDir)) {
+						Directory.CreateDirectory(logDir);
+					}
+					if (!vars.logFile.Exists) {
+						vars.logFile.Create();
+					}
+				}
+				catch (Exception e) {
+					MessageBox.Show("Could not create log file:\n" + vars.logFile.FullName);
+				}
+			}
+		}
+	};
+	vars.setupLogging();
+
 	// There will be a process, otherwise this wouldn’t be called. There will only be one process of that file.
 	string eliteClientPath = Process.GetProcessesByName("EliteDangerous64").First().MainModule.FileName;
 	vars.log("Found Elite Process: " + eliteClientPath);
@@ -128,6 +145,12 @@ start {
 	if (!String.IsNullOrEmpty(current.journalString)) {
 		System.Text.RegularExpressions.Match match = vars.journalEntries["start"].Match(current.journalString);
 		if (match.Success) {
+			// This is necessary if file logging was enabled in the layout settings _after_ the game was started.
+			// There appears to be a race condition here; creating the file, then immediately trying to log to it results in:
+			// “[XXXXX] The process cannot access the file '…\autosplitter.log' because it is being used by another process.”
+			// We can’t wait either though, it would delay the start time.
+			vars.setupLogging();
+
 			vars.log(match.Groups["timestamp"].Value + " - Start run: Combat music detected");
 			start = true;
 		}

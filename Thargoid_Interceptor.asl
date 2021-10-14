@@ -115,11 +115,6 @@ init {
 update {
 	current.journalString = vars.journalReader.ReadToEnd();
 	current.netlogString = vars.netlogReader.ReadToEnd();
-
-	if (String.IsNullOrEmpty(current.journalString) && String.IsNullOrEmpty(current.netlogString)) {
-		// Nothing new, don't run any other code blocks
-		return false; 
-	}
 }
 
 start {

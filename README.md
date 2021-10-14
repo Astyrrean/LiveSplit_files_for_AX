@@ -50,8 +50,8 @@ v1.0RC - Initial Release Candidate 10/14/2021
 
 ## Contributing authors
 
-CMDR Abexuro, Discord: Abex#5089: Original creator for Eye of the Odyssey
-CMDR alterNERDtive: Major overhaul of several systems and general "professionalization" of the code, initial README.md file
-CMDR Mechan: Adaptation to general speedrunning, inclusion of netLog parsing, adding icons, updates to README.md file
-CMDR Orodruin: Update for EotO and adaptation to Ceres Trials
+- CMDR Abexuro, Discord: Abex#5089: Original creator for Eye of the Odyssey;
+- CMDR alterNERDtive: Major overhaul of several systems and general "professionalization" of the code, initial README.md file;
+- CMDR Mechan: Adaptation to general speedrunning, inclusion of netLog parsing, adding icons, updates to README.md file;
+- CMDR Orodruin: Update for EotO and adaptation to Ceres Trials.
 

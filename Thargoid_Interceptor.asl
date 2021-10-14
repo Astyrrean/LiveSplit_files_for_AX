@@ -161,9 +161,6 @@ start {
 		System.Text.RegularExpressions.Match match = vars.journalEntries["start"].Match(current.journalString);
 		if (match.Success) {
 			// This is necessary if file logging was enabled in the layout settings _after_ the game was started.
-			// There appears to be a race condition here; creating the file, then immediately trying to log to it results in:
-			// “[XXXXX] The process cannot access the file '…\autosplitter.log' because it is being used by another process.”
-			// We can’t wait either though, it would delay the start time.
 			vars.setupLogging();
 
 			vars.log(match.Groups["timestamp"].Value + " - Start run: Combat music detected");

@@ -36,36 +36,34 @@ startup {
 	// Initialize settings
 	settings.Add("logging", false, "Log to file");
 	settings.SetToolTip("logging", "Write the auto splitter log to a file for debugging purposes");
+	settings.Add("flushlog", false, "Flush the log file on every write", "logging");
+	settings.SetToolTip("flushlog", "By default, log output is buffered to save I/O delay. Enable this for debugging, do not enable this for actual competitive runs.");
 
+	vars.logFile = null;
+	vars.logFileWriter = null;
+	vars.logToFile = false;
+	vars.logAutoFlush = false;
 	// Initialize log file
-	string logDirectoyPath = Path.Combine(
-		Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-		"LiveSplit",
-		"Thargoid_Interceptors"
+	vars.logFile = new FileInfo(Path.Combine(
+			Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+			"LiveSplit",
+			"Thargoid_Interceptors",
+			"autosplitter.log")
 		);
-	vars.logFile = new FileInfo(Path.Combine(logDirectoyPath, "autosplitter.log"));
-	try {
-		if (!Directory.Exists(logDirectoyPath)) {
-			Directory.CreateDirectory(logDirectoyPath);
-		}
-		if (!vars.logFile.Exists) {
-			vars.logFile.Create();
-		}
-	}
-	catch (Exception e) {
-		MessageBox.Show("Could not create log file:\n" + vars.logFile.FullName);
-	}
-
 	vars.log = (Action<string>)((string logLine) => {
 		print(logLine);
-		// needs to check settings too, but those aren’t available in startup …
-		try {
-			using (StreamWriter writer = vars.logFile.AppendText()) {
-				writer.WriteLine(System.DateTime.Now.ToString("dd/MM/yy hh:mm:ss:fff") + ": " + logLine);
+		if (vars.logToFile) {
+			try {
+				vars.logFileWriter.WriteLine(System.DateTime.Now.ToString("dd/MM/yy hh:mm:ss:fff") + ": " + logLine);
+				// We are not `Flush()`ing here by default to keep I/O delay down.
+				// That means it is potentially only written when the auto splitter is un-/re-loaded, or when the timers are reset.
+				if (vars.logAutoFlush) {
+					vars.logFileWriter.Flush();
+				}
 			}
-		}
-		catch (Exception e) {
-			print(e.Message);
+			catch (Exception e) {
+				print(e.Message);
+			}
 		}
 	});
 
@@ -73,6 +71,40 @@ startup {
 }
 
 init {
+	// Doing this here, since the setting is not available during `startup`.
+	// There is no way to detect when the user changes the option in layout settings; so we’ll have to check in `start` again.
+	// If a user changes the setting mid run … not my department.
+	vars.setupLogging = (Action)delegate() {
+		// Only do anything if the setting hasn’t been applied yet.
+		// If we’re in sync, just return to minimise execution time.
+		if (settings["logging"] != vars.logToFile) {
+			vars.logToFile = settings["logging"];
+			if (vars.logToFile) {
+				vars.logAutoFlush = settings["flushlog"];
+				try {
+					string logDir = Path.GetDirectoryName(vars.logFile.FullName);
+					if (!Directory.Exists(logDir)) {
+						Directory.CreateDirectory(logDir);
+					}
+
+					if (vars.logFile.Exists) {
+						vars.logFileWriter = vars.logFile.AppendText();
+					}
+					else {
+						vars.logFileWriter = vars.logFile.CreateText();
+					}
+				}
+				catch (Exception e) {
+					MessageBox.Show("Could not create log file:\n" + vars.logFile.FullName);
+				}
+			}
+			else {
+				vars.logFileWriter.Close();
+			}
+		}
+	};
+	vars.setupLogging();
+
 	// There will be a process, otherwise this wouldn’t be called. There will only be one process of that file.
 	string eliteClientPath = Process.GetProcessesByName("EliteDangerous64").First().MainModule.FileName;
 	vars.log("Found Elite Process: " + eliteClientPath);
@@ -123,6 +155,9 @@ start {
 	if (!String.IsNullOrEmpty(current.journalString)) {
 		System.Text.RegularExpressions.Match match = vars.journalEntries["start"].Match(current.journalString);
 		if (match.Success) {
+			// This is necessary if file logging was enabled in the layout settings _after_ the game was started.
+			vars.setupLogging();
+
 			vars.log(match.Groups["timestamp"].Value + " - Start run: Combat music detected");
 			start = true;
 		}
@@ -169,11 +204,44 @@ reset {
 		vars.heartCounter = 0;
 	}
 
+	// flush the log file
+	if (vars.logFileWriter != null) {
+		vars.logFileWriter.Flush();
+	}
+
 	return reset;
 }
 
 exit {
+	// Remember to mirror changes here in `shutdown` if necessary!
+
 	// we opened these on game launch, so we better close them on game shutdown!
 	vars.journalReader.Close();
 	vars.netlogReader.Close();
+
+	// flush the log file
+	if (vars.logFileWriter != null) {
+		vars.logFileWriter.Flush();
+	}
+}
+
+// Executes when LiveScript shuts the auto splitter down, e.g. on reloading it.
+// In our case we need to close the StreamWriter for the auto splitter’s log file.
+// When reloading the splitter with the game running, LiveSplit does **not** execute `exit`, but it does execute `shutdown`.
+// So we need to close the journal/netlog file readers here, too.
+// see https://github.com/LiveSplit/LiveSplit.AutoSplitters/blob/master/README.md#script-shutdown
+shutdown {
+	vars.log("Autosplitter is being shut down, closing streams …");
+
+	if (vars.journalReader != null) {
+		vars.journalReader.Close();
+	}
+	if (vars.netlogReader != null) {
+		vars.netlogReader.Close();
+	}
+
+	// Close the log file writer.
+	if (vars.logFileWriter != null) {
+		vars.logFileWriter.Close();
+	}
 }

@@ -228,6 +228,8 @@ reset {
 // In our case we’re going to close the files we opened in `init`.
 // See https://github.com/LiveSplit/LiveSplit.AutoSplitters/blob/master/README.md#game-exit
 exit {
+	// Remember to mirror changes here in `shutdown` if necessary!
+
 	vars.log("Elite client shut down, closing files …");
 	
 	vars.journalReader.Close();

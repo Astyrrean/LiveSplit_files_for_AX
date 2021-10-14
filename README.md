@@ -26,4 +26,6 @@ speedruns of your favourite games!
 2. Load the correct splits for the interceptor you are about to fight.
 3. Happy hunting!
 
-Please be aware that your attempts and associated times will be saved to the selected splits file. If there is ever going to be an update to those, you will have to manually copy your data over or you are going to lose it.
+Please be aware that your attempts and associated times will be saved to the
+selected splits file. If there is ever going to be an update to those, you will
+have to manually copy your data over or you are going to lose it.

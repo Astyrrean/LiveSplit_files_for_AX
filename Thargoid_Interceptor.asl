@@ -1,15 +1,6 @@
 /*	Originally written, and successfully refactored, by CMDR Abexuro, Discord: Abex#5089
 *	Edited/updated/adapted by CMDRs Mechan and Orodruin
-*	"Professionalized" by CMDR AlterNERDtive
-*
-*	### INSTALLATION ###
-*	-	If you haven't already, download LiveSplit from https://livesplit.org/downloads/
-*	-	Enable netLogs in-game in the main_menu/networking screen
-*	-	In LiveSplit do the following:
-*	-		Right click, Open Splits, select the appropriate *.lss file (Cyclops/Basilisk/Medusa/Hydra)
-*	-		Right click, Open Layout, select the appropriate *.lsl file (Cyclops/Basilisk/Medusa/Hydra)
-*	-		Right click, Edit Layout, Layout Settings, then in Scriptable Auto Splitter, set the appropriate *.asl file as the script path (Cyclops/Basilisk/Medusa/Hydra)
-*
+*	"Professionalized" by CMDR alterNERDtive
 */
 
 // Defines the process to monitor. We are not reading anything from the game’s memory, so it’s empty.

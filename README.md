@@ -36,7 +36,11 @@ if you are going to perform a variety of different activities/challenges.
 
 1. LiveSplit will appear to "freeze" for 15 seconds when Elite Dangerous is loaded - this is (unfortunately) by design,
    as we need to wait for the appropriate log files to be created before we can open them;
-2. Wing fights are currently not supported; this is due to how E:D writes log files; it will be fixed in an upcoming release.
+2. For extreme speedruns, notably of the Cyclops (but occasionally of Basilisk too and, if lightning execution is used, Medusa as well)
+   the bond split may trigger BEFORE the last heart is reset (and thus triggers the split.) In these circumstances, the timer
+   will be "missing" a split and keep running - and the bond time will effectively be recorded as the next-to-last split time.
+   Unfortunately there is no easy workaround for this condition; if you plan on extreme-speedrunning Cyclopses and Basilisks, contact the authors
+   for a specially-tailored version of these files
 
 If you encouter an issue other than the above, you can enable logging in the autosplitter script tab, to help diagnose the issue.
 

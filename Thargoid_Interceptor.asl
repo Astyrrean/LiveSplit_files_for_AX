@@ -17,7 +17,10 @@ startup {
 		new System.Text.RegularExpressions.Regex(@"\{ ""timestamp"":""(?<timestamp>.*)"", ""event"":""Music"", ""MusicTrack"":""Combat_Unknown"" \}");
 	vars.journalEntries["end"] =
 		new System.Text.RegularExpressions.Regex(@"\{ ""timestamp"":""(?<timestamp>.*)"", ""event"":""FactionKillBond"", ""Reward"":(?<reward>\d{7}\d?), ""AwardingFaction"":""\$faction_PilotsFederation;"", ""AwardingFaction_Localised"":"".*"", ""VictimFaction"":""\$faction_Thargoid;"", ""VictimFaction_Localised"":"".*"" \}");
-	vars.journalEntries["reset"] = new System.Text.RegularExpressions.Regex(@".*(SupercruiseEntry|StartJump.*JumpType.*Hyperspace).*");
+	vars.journalEntries["reset_mainmenu"] = new System.Text.RegularExpressions.Regex(@"\{ ""timestamp"":""(?<timestamp>.*)"", ""event"":""Music"", ""MusicTrack"":""MainMenu"" \}");
+	vars.journalEntries["reset_starport"] = new System.Text.RegularExpressions.Regex(@"\{ ""timestamp"":""(?<timestamp>.*)"", ""event"":""Music"", ""MusicTrack"":""Starport"" \}");
+	vars.journalEntries["reset_shutdown"] = new System.Text.RegularExpressions.Regex(@"\{ ""timestamp"":""(?<timestamp>.*)"", ""event"":""Shutdown"" \}");
+	vars.journalEntries["reset_newNHSS"] = new System.Text.RegularExpressions.Regex(@"\{ ""timestamp"":""(?<timestamp>.*)"", ""USSDrop"", ""USS_Type_NonHuman"" \}");
 
 	// Relevant netlog entries
 	vars.netlogEntries = new Dictionary<string, System.Text.RegularExpressions.Regex>();
@@ -179,10 +182,16 @@ start {
 split {
 	bool split = false;
 
+	// The two values are necessary to support wing fights, as when client is Authority of NPC, value is printed as unsigned (4294967295)
+	// and, when it is not (wing fight), it is printed as signed (-1)
 	if (!String.IsNullOrEmpty(current.netlogString)) {
 		System.Text.RegularExpressions.Match match = vars.netlogEntries["heart"].Match(current.netlogString);
 		if (match.Success && match.Groups["index"].Value == "4294967295") {
-			vars.log(match.Groups["timestamp"].Value + " - Split: Heart " + ++vars.heartCounter + " down");
+			vars.log(match.Groups["timestamp"].Value + " - Split: Heart " + ++vars.heartCounter + " down [Authority]");
+			split = true;
+		}
+		if (match.Success && match.Groups["index"].Value == "-1") {
+			vars.log(match.Groups["timestamp"].Value + " - Split: Heart " + ++vars.heartCounter + " down [Non-Authority]");
 			split = true;
 		}
 	}
@@ -204,9 +213,24 @@ reset {
 	bool reset = false;
 
 	if (!String.IsNullOrEmpty(current.journalString)) {
-		System.Text.RegularExpressions.Match match = vars.journalEntries["reset"].Match(current.journalString);
+		System.Text.RegularExpressions.Match match = vars.journalEntries["reset_mainmenu"].Match(current.journalString);
 		if (match.Success) {
-			vars.log(match.Groups["timestamp"].Value + " - Reset: Jumped out");
+			vars.log(match.Groups["timestamp"].Value + " - Reset: Main menu");
+			reset = true;
+		}
+		match = vars.journalEntries["reset_starport"].Match(current.journalString);
+		if (match.Success) {
+			vars.log(match.Groups["timestamp"].Value + " - Reset: Starport");
+			reset = true;
+		}
+		match = vars.journalEntries["reset_shutdown"].Match(current.journalString);
+		if (match.Success) {
+			vars.log(match.Groups["timestamp"].Value + " - Reset: Client shutdown");
+			reset = true;
+		}
+		match = vars.journalEntries["reset_newNHSS"].Match(current.journalString);
+		if (match.Success) {
+			vars.log(match.Groups["timestamp"].Value + " - Reset: Dropped into a new NHSS");
 			reset = true;
 		}
 	}

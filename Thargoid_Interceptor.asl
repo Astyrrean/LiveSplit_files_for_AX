@@ -1,19 +1,15 @@
 /*	Originally written, and successfully refactored, by CMDR Abexuro, Discord: Abex#5089
 *	Edited/updated/adapted by CMDRs Mechan and Orodruin
-*	"Professionalized" by CMDR AlterNERDtive
-*
-*	### INSTALLATION ###
-*	-	If you haven't already, download LiveSplit from https://livesplit.org/downloads/
-*	-	Enable netLogs in-game in the main_menu/networking screen
-*	-	In LiveSplit do the following:
-*	-		Right click, Open Splits, select the appropriate *.lss file (Cyclops/Basilisk/Medusa/Hydra)
-*	-		Right click, Open Layout, select the appropriate *.lsl file (Cyclops/Basilisk/Medusa/Hydra)
-*	-		Right click, Edit Layout, Layout Settings, then in Scriptable Auto Splitter, set the appropriate *.asl file as the script path (Cyclops/Basilisk/Medusa/Hydra)
-*
+*	"Professionalized" by CMDR alterNERDtive
 */
 
+// Defines the process to monitor. We are not reading anything from the game’s memory, so it’s empty.
+// We still need it though, LiveSplit will only run the auto splitter if the corresponding process is present.
+// see https://github.com/LiveSplit/LiveSplit.AutoSplitters/blob/master/README.md#state-descriptors
 state("EliteDangerous64") {}
 
+// Executes when LiveSplit (re-)loads the auto splitter. Does general setup tasks.
+// see https://github.com/LiveSplit/LiveSplit.AutoSplitters/blob/master/README.md#script-startup
 startup {
 	// Relevant journal entries
 	vars.journalEntries = new Dictionary<string, System.Text.RegularExpressions.Regex>();
@@ -70,6 +66,10 @@ startup {
 	vars.log("Autosplitter loaded");
 }
 
+// Executes when LiveSplit detects the game process (see “state” at the top of the file).
+// In our case the journal and netlog files are unique to every execution of the game, so we need to prepare them here.
+// We also need to check if file logging is enabled (the setting is not available in `startup`) and create/open our log file.
+// see https://github.com/LiveSplit/LiveSplit.AutoSplitters/blob/master/README.md#script-initialization-game-start
 init {
 	// Doing this here, since the setting is not available during `startup`.
 	// There is no way to detect when the user changes the option in layout settings; so we’ll have to check in `start` again.
@@ -144,11 +144,16 @@ init {
 	}
 }
 
+// Executes as long as the game process is running, by default 60 times per second.
+// Unless explicitly returning `false`, `start`, `split` and `reset` are executed right after.
+// See https://github.com/LiveSplit/LiveSplit.AutoSplitters/blob/master/README.md#generic-update
 update {
 	current.journalString = vars.journalReader.ReadToEnd();
 	current.netlogString = vars.netlogReader.ReadToEnd();
 }
 
+// Executes every `update`. Starts the timer if Thargoid combat is detected.
+// see https://github.com/LiveSplit/LiveSplit.AutoSplitters/blob/master/README.md#automatic-timer-start-1
 start {
 	bool start = false;
 
@@ -166,6 +171,11 @@ start {
 	return start;
 }
 
+// Executes every `update`. Triggers a split if either a heart reset or a combat bond is detected.
+// Caveat: We cannot distinguish between a destroyed and an un-exerted heart after the exert timer running out.
+// Instead we split on heart reset, which occurs approximately 10s after destruction.
+// This can run into a race condition with the killing blow occuring too fast after heart 4 destruction on a Cyclops, see #8
+// see https://github.com/LiveSplit/LiveSplit.AutoSplitters/blob/master/README.md#automatic-splits-1
 split {
 	bool split = false;
 
@@ -188,6 +198,8 @@ split {
 	return split;
 }
 
+// Executes every `update`. Triggers a reset if a low or high wake is detected.
+// see https://github.com/LiveSplit/LiveSplit.AutoSplitters/blob/master/README.md#automatic-resets-1
 reset {
 	bool reset = false;
 
@@ -212,10 +224,14 @@ reset {
 	return reset;
 }
 
+// Executes when the game process is shut down.
+// In our case we’re going to close the files we opened in `init`.
+// See https://github.com/LiveSplit/LiveSplit.AutoSplitters/blob/master/README.md#game-exit
 exit {
 	// Remember to mirror changes here in `shutdown` if necessary!
 
-	// we opened these on game launch, so we better close them on game shutdown!
+	vars.log("Elite client shut down, closing files …");
+	
 	vars.journalReader.Close();
 	vars.netlogReader.Close();
 

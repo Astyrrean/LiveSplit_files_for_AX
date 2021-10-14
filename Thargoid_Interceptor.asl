@@ -240,8 +240,8 @@ reset {
 		vars.heartCounter = 0;
 	}
 
-	// flush the log file
-	if (vars.logFileWriter != null) {
+	// flush the log file on a reset
+	if (reset && vars.logFileWriter != null) {
 		vars.logFileWriter.Flush();
 	}
 

@@ -30,6 +30,7 @@ startup {
 	// readers
 	vars.journalReader = null;
 	vars.netlogReader = null;
+
 	// Initialize heart counter
 	vars.heartCounter = 0;
 	// Initialize settings
@@ -65,6 +66,33 @@ startup {
 			}
 		}
 	});
+
+	// Journal file handling
+	vars.journalPath = Path.Combine(
+		Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+		"Saved Games",
+		"Frontier Developments",
+		"Elite Dangerous"
+		);
+	vars.currentJournal = "none";
+	vars.updateJournalReader = (Action)delegate() {
+		FileInfo journalFile = new DirectoryInfo(vars.journalPath).GetFiles("journal.*.log").OrderByDescending(file => file.Name).First();
+		vars.log("Current journal file: " + vars.currentJournal + ", latest journal file: " + journalFile.Name);
+		if (journalFile.Name != vars.currentJournal) {
+			vars.journalReader = new StreamReader(new FileStream(journalFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+			vars.currentJournal = journalFile.Name;
+		}
+	};
+	vars.updateJournalReader();
+	vars.journalReader.ReadToEnd();
+
+	// Watch for new files
+	FileSystemWatcher journalWatcher = new FileSystemWatcher(vars.journalPath);
+	journalWatcher.Created += (object sender, FileSystemEventArgs eventArgs) => {
+		vars.updateJournalReader();
+	};
+	journalWatcher.EnableRaisingEvents = true;
+	vars.netlogWatcher = null;
 
 	vars.log("Autosplitter loaded");
 }
@@ -112,38 +140,39 @@ init {
 	string eliteClientPath = Process.GetProcessesByName("EliteDangerous64").First().MainModule.FileName;
 	vars.log("Found Elite Process: " + eliteClientPath);
 
-	string netlogPath = Path.Combine(
+	// Netlog file handling
+	vars.netlogPath = Path.Combine(
 			Path.GetDirectoryName(eliteClientPath),
 			"Logs"
 		);
-	string journalPath = Path.Combine(
-		Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-		"Saved Games",
-		"Frontier Developments",
-		"Elite Dangerous"
-		);
+	vars.currentNetlog = "none";
+	vars.updateNetlogReader = (Action)delegate() {
+		FileInfo netlogFile = new DirectoryInfo(vars.netlogPath).GetFiles("netlog.*.log").OrderByDescending(file => file.Name).First();
+		vars.log("Current netlog file: " + vars.currentNetlog + ", latest netlog file: " + netlogFile.Name);
+		if (netlogFile.Name != vars.currentNetlog) {
+			vars.netlogReader = new StreamReader(new FileStream(netlogFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+			vars.currentNetlog = netlogFile.Name;
+			vars.netlogReader.ReadToEnd();
+		}
+	};
+	vars.updateNetlogReader();
 
-	// Quick & dirty race condition “fix”, see issue #4
-	int delay = 15;
-	vars.log("Waiting for log files, sleeping for " + delay + " s …");
-	Thread.Sleep(delay*1000);
-
-	// Grab latest journal file
-	FileInfo journalFile = new DirectoryInfo(journalPath).GetFiles("journal.*.log").OrderByDescending(file => file.Name).First();
-	vars.log("Found Journal: " + journalFile.FullName);
-	vars.journalReader = new StreamReader(new FileStream(journalFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
-	vars.journalReader.ReadToEnd();
-
-	// Grab latest netlog file
-	if (!Directory.Exists(netlogPath)) {
-		string message = "Netlog directory '" + netlogPath + "' not found. Please make sure to enable netlogs.";
+	// Kill old netlog watcher, might be different client path this time (e.g. Horizons vs. Odyssey)
+	if (vars.netlogWatcher != null) {
+		vars.netlogWatcher.EnableRaisingEvents = false;
+	}
+	// Watch for new files
+	if (!Directory.Exists(vars.netlogPath)) {
+		string message = "Netlog directory '" + vars.netlogPath + "' not found. Please make sure to enable netlogs.";
 		vars.log(message);
 		MessageBox.Show(message);
 	} else {
-		FileInfo netLogFile = new DirectoryInfo(netlogPath).GetFiles("netLog.*.log").OrderByDescending(file => file.Name).First();
-		vars.log("Found NetLog: " + netLogFile.FullName);
-		vars.netlogReader = new StreamReader(new FileStream(netLogFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
-		vars.netlogReader.ReadToEnd();
+		FileSystemWatcher netlogWatcher = new FileSystemWatcher(vars.netlogPath);
+		netlogWatcher.Created += (object sender, FileSystemEventArgs eventArgs) => {
+			vars.updateNetlogReader();
+		};
+		netlogWatcher.EnableRaisingEvents = true;
+		vars.netlogWatcher = netlogWatcher;
 	}
 }
 

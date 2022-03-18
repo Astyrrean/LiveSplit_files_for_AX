@@ -76,7 +76,7 @@ startup {
 		);
 	vars.currentJournal = "none";
 	vars.updateJournalReader = (Action)delegate() {
-		FileInfo journalFile = new DirectoryInfo(vars.journalPath).GetFiles("journal.*.log").OrderByDescending(file => file.Name).First();
+		FileInfo journalFile = new DirectoryInfo(vars.journalPath).GetFiles("journal.*.log").OrderByDescending(file => file.LastWriteTime).First();
 		vars.log("Current journal file: " + vars.currentJournal + ", latest journal file: " + journalFile.Name);
 		if (journalFile.Name != vars.currentJournal) {
 			vars.journalReader = new StreamReader(new FileStream(journalFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
@@ -147,7 +147,7 @@ init {
 		);
 	vars.currentNetlog = "none";
 	vars.updateNetlogReader = (Action)delegate() {
-		FileInfo netlogFile = new DirectoryInfo(vars.netlogPath).GetFiles("netlog.*.log").OrderByDescending(file => file.Name).First();
+		FileInfo netlogFile = new DirectoryInfo(vars.netlogPath).GetFiles("netlog.*.log").OrderByDescending(file => file.LastWriteTime).First();
 		vars.log("Current netlog file: " + vars.currentNetlog + ", latest netlog file: " + netlogFile.Name);
 		if (netlogFile.Name != vars.currentNetlog) {
 			vars.netlogReader = new StreamReader(new FileStream(netlogFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
